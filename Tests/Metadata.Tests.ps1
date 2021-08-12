@@ -1,11 +1,9 @@
 Describe "Metadata"{
-    BeforeAll{
-        Set-Location $PSScriptRoot
-        Set-Location ..
-        $psscripts = $((Get-ChildItem "*.ps1").Name)
-        foreach($psscript in $psscripts){
-            . .\$psscript
-        }
+    Set-Location $PSScriptRoot
+    Set-Location ..
+    $psscripts = $((Get-ChildItem "*.ps1").Name)
+    foreach($psscript in $psscripts){
+        . .\$psscript
     }
 
     It "Should have a LICENSE file" {
