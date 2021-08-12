@@ -1,8 +1,6 @@
-#requires -Version 5.0
-
 <#
 .SYNOPSIS
-    Scans port(s) on given IP Address
+    Brute forces a list of web site directories and returns the ones that are successful
 .DESCRIPTION
     Queries a provided list file for directories against a provided URL. Returns the
     HTTP Status code of each result. The list file does not have to have extensions
@@ -29,31 +27,33 @@
 .NOTES
     Author: ergo
 #>
-function Scan-Port {
+function Get-SNMPInfo{
     Param(
-        [Parameter(Mandatory=$true,Position=0)]
-        [Alias("IP")]
-        [string]$IPAddress,
+        [Parameter(Mandatory=$true)]
+        [Alias('Host')]
+        [ipaddress]
+        $Device,
 
-        [Alias("p")]
-        $Ports = (1..1000)
+        [Parameter(Mandatory=$true)]
+        [string]
+        $CommunityString
     )
-    BEGIN{
-        $multipleports = $false
-        if ($Ports.length -gt 1) {$multipleports = $true}
+    $SNMP = New-object -ComObject olePrn.OleSNMP
+    $SNMP.open($Device,$CommunityString,2,1000)
+    $sysDescr = $SNMP.get('.1.3.6.1.2.1.1.1.0')
+    $contact = $SNMP.get('.1.3.6.1.2.1.1.4.0')
+    $sysname = $SNMP.get('.1.3.6.1.2.1.1.5.0')
+    $location = $SNMP.get('.1.3.6.1.2.1.1.6.0')
+    $uptime = $SNMP.get('.1.3.6.1.2.1.25.1.1.0')
+    $SNMP.Close()
+    $obj = [pscustomobject]@{
+        SysName = $sysname
+        Description = $sysDescr
+        Location = $location
+        Contact = $contact
+        UpTime = "$([math]::Round($($uptime/8640000),2)) days"
     }
-
-    PROCESS{
-        if($multipleports){
-            Foreach ($port in $Ports){
-                Test-NetConnection -ComputerName $IPAddress -Port $port
-            }
-        } else{
-            Test-NetConnection -ComputerName $IPAddress -Port $Ports
-        }
-    }
-
-    END{
-
-    }
+    $result = New-Object System.Collections.ArrayList
+    $null = $result.Add($obj)
+    $result
 }
